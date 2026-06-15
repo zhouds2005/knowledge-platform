@@ -1,0 +1,74 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: knowledge_platform
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm ci
+
+      - name: Push DB schema
+        run: npx drizzle-kit push
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/knowledge_platform
+
+      - name: Seed database
+        run: npx tsx server/db/seed.ts
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/knowledge_platform
+          SESSION_SECRET: ci-secret
+
+      - name: Run vitest (unit + integration)
+        run: npm test
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/knowledge_platform
+          SESSION_SECRET: ci-secret
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Start API server + Vite
+        run: |
+          npx tsx server/index.ts &
+          npx vite --host 0.0.0.0 &
+          sleep 5
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/knowledge_platform
+          SESSION_SECRET: ci-secret
+          NEXTCLOUD_URL: http://localhost:8080
+          NEXTCLOUD_USER: ci
+          NEXTCLOUD_PASS: ci
+
+      - name: Run Playwright (skip drive — needs Nextcloud)
+        run: npx playwright test --project=chromium --ignore-snapshots
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/knowledge_platform
+          SESSION_SECRET: ci-secret
+          CI: true

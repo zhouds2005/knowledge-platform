@@ -1,0 +1,44 @@
+[
+  {
+    "id": "c37ca8a9-1f13-4eba-801b-e98406012d8f",
+    "name": "测试自动化部门",
+    "parent_id": null,
+    "created_at": "2026-06-13T06:18:37.373Z",
+    "nextcloud_path": "/测试自动化部门"
+  },
+  {
+    "id": "7d65daed-9f13-4902-b389-181baca0c0f3",
+    "name": "综合管理部",
+    "parent_id": null,
+    "created_at": "2026-06-12T16:11:08.101Z",
+    "nextcloud_path": "/综合管理部"
+  },
+  {
+    "id": "a6f94711-c144-4aaf-befc-f6312e05390f",
+    "name": "技术研发部",
+    "parent_id": null,
+    "created_at": "2026-06-12T16:11:08.101Z",
+    "nextcloud_path": "/技术研发部"
+  },
+  {
+    "id": "0daadfcc-7e7a-47d3-be98-0b16010f8ec7",
+    "name": "市场销售部",
+    "parent_id": null,
+    "created_at": "2026-06-12T16:11:08.101Z",
+    "nextcloud_path": "/市场销售部"
+  },
+  {
+    "id": "b0f5f886-84f9-4f9c-8a35-af4be5894c5d",
+    "name": "财务部",
+    "parent_id": null,
+    "created_at": "2026-06-12T16:11:08.101Z",
+    "nextcloud_path": "/财务部"
+  },
+  {
+    "id": "b4c40dbe-dcab-4a52-b619-ce5bfa3ca46d",
+    "name": "信息档案中心",
+    "parent_id": null,
+    "created_at": "2026-06-13T04:50:20.367Z",
+    "nextcloud_path": "/信息档案中心"
+  }
+]

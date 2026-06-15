@@ -1,0 +1,47 @@
+[
+  {
+    "id": "4cd9b73f-460b-4ad7-9c6d-cfb3e558b92d",
+    "name": "系统管理员",
+    "email": "admin@company.com",
+    "password_hash": "601813852bea146164ab115a8f5d114a:940d6b1f3022b19b0aa4becc5c7b60ebba9cf0dd4abb35ac59de93bdf2aeca7c863af3711569dad521c10d0d64722964fead2789dd58bb4adb2a3a1950c441c4",
+    "role": "admin",
+    "department_id": "7d65daed-9f13-4902-b389-181baca0c0f3",
+    "created_at": "2026-06-12T16:11:08.255Z"
+  },
+  {
+    "id": "44b0587d-5954-43fe-81ba-ed32b40ae818",
+    "name": "张三",
+    "email": "zhangsan@company.com",
+    "password_hash": "ab8b912be1eb70a706d03a51e4c95839:ddd84cc50d52535d0302fc76340a5b187664fafef021bb301c7a97eb45758e5ad6f8d74f316effe1307a15d9c856d594b398e264b00000ecfd32725f0ff83b08",
+    "role": "editor",
+    "department_id": "a6f94711-c144-4aaf-befc-f6312e05390f",
+    "created_at": "2026-06-12T16:11:08.790Z"
+  },
+  {
+    "id": "b6266e90-90d6-4350-b862-680552c60ff1",
+    "name": "李四",
+    "email": "lisi@company.com",
+    "password_hash": "9fa9abec1581debf3760c32dd3700dfe:a2889080a83865c814124823fca951c6a21abf70de852e353dd133485105fb1d6910cc483915253c2e600fd3d64fe770d1934eefd06d10a9dd88ffba526dfec5",
+    "role": "editor",
+    "department_id": "0daadfcc-7e7a-47d3-be98-0b16010f8ec7",
+    "created_at": "2026-06-12T16:11:08.790Z"
+  },
+  {
+    "id": "f9de5bdf-38e8-4952-81a3-26df27e3c534",
+    "name": "王五",
+    "email": "wangwu@company.com",
+    "password_hash": "746d738fa2072935d816a2cedd448fb8:95b4ddfc8818211343554954786f6d4679bc7a16bda626adc0b4c65b4376da6bc09ef1763b7b89b1aa4fddbc0af1904774189331db3b34231cac26dadf6a3d7e",
+    "role": "viewer",
+    "department_id": "b0f5f886-84f9-4f9c-8a35-af4be5894c5d",
+    "created_at": "2026-06-12T16:11:08.790Z"
+  },
+  {
+    "id": "4693b0ee-58e0-489a-b381-ea969341031b",
+    "name": "测试用户",
+    "email": "test@test.com",
+    "password_hash": "946c9b22dc25e9985c8a57085017d809:c43f69e505d6e6feec1a6e9d1f9f9ef76d2608a93149f87f9830ad8b29c481452e359f36c60b7cd8383c65f9139bfc9b73c9ce622b573c80f3f5971517c649d3",
+    "role": "editor",
+    "department_id": null,
+    "created_at": "2026-06-13T06:14:09.265Z"
+  }
+]

@@ -1,0 +1,47 @@
+[
+  {
+    "id": "56e6b007-b0d7-4348-8ac0-3f3dacfe4287",
+    "user_id": "4cd9b73f-460b-4ad7-9c6d-cfb3e558b92d",
+    "type": "review_requested",
+    "object_id": "6cba4896-4f82-4e41-8df9-dce3884bdcd1",
+    "message": "\"验证-版本策略\" 已提交审核",
+    "read": false,
+    "created_at": "2026-06-13T01:00:40.653Z"
+  },
+  {
+    "id": "d2a1b560-ef73-499c-a1ec-efd98064112d",
+    "user_id": "4cd9b73f-460b-4ad7-9c6d-cfb3e558b92d",
+    "type": "review_approved",
+    "object_id": "6cba4896-4f82-4e41-8df9-dce3884bdcd1",
+    "message": "\"验证-版本策略\" 审核已通过",
+    "read": false,
+    "created_at": "2026-06-13T01:00:40.829Z"
+  },
+  {
+    "id": "3312281c-f276-49c5-98d4-0c82198b2b7a",
+    "user_id": "4cd9b73f-460b-4ad7-9c6d-cfb3e558b92d",
+    "type": "review_requested",
+    "object_id": "ed9759be-6015-4187-a19b-1d0a84b8e3b3",
+    "message": "\"模拟计划.xlsx\" 已提交审核",
+    "read": false,
+    "created_at": "2026-06-13T04:12:31.550Z"
+  },
+  {
+    "id": "b2cbcdfd-f53e-48bd-bbe0-08711ec7c0a1",
+    "user_id": "4cd9b73f-460b-4ad7-9c6d-cfb3e558b92d",
+    "type": "review_approved",
+    "object_id": "ed9759be-6015-4187-a19b-1d0a84b8e3b3",
+    "message": "\"模拟计划.xlsx\" 审核已通过",
+    "read": false,
+    "created_at": "2026-06-13T04:12:35.663Z"
+  },
+  {
+    "id": "39281bae-c517-40ef-a9c5-a07d5456b867",
+    "user_id": "4cd9b73f-460b-4ad7-9c6d-cfb3e558b92d",
+    "type": "review_requested",
+    "object_id": "3fb6d95a-584c-4c4c-93c0-36b30ce1db69",
+    "message": "\"审核流程测试文档\" 已提交审核",
+    "read": false,
+    "created_at": "2026-06-13T06:57:25.780Z"
+  }
+]
