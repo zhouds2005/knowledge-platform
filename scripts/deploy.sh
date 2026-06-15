@@ -33,9 +33,9 @@ fi
 
 # ---- 3. 跑测试 ----
 echo "[3/7] 运行测试..."
-npx vitest run >/dev/null 2>&1 || { echo "错误：单元测试未通过"; exit 1; }
-npx playwright test --project=chromium >/dev/null 2>&1 || { echo "错误：E2E 测试未通过"; exit 1; }
-echo "      135 个测试全部通过"
+npx vitest run || { echo "错误：单元测试未通过"; exit 1; }
+npx playwright test --project=chromium || { echo "错误：E2E 测试未通过"; exit 1; }
+echo "      全部通过"
 
 # ---- 4. 备份数据库 ----
 echo "[4/7] 备份数据库..."
@@ -46,8 +46,13 @@ pg_dump -U postgres -h localhost knowledge_platform > "$BACKUP_FILE" 2>/dev/null
 
 # ---- 5. 构建前端 ----
 echo "[5/7] 构建前端..."
-npm run build >/dev/null 2>&1 || { echo "错误：前端构建失败"; exit 1; }
-echo "      构建完成"
+# 备份旧版本
+[ -d dist ] && { rm -rf dist.prev 2>/dev/null; mv dist dist.prev; }
+
+npm run build || { echo "错误：前端构建失败"; exit 1; }
+# 写版本标记
+date +%Y%m%d-%H%M%S > dist/version.txt
+echo "      构建完成 ($(cat dist/version.txt))"
 
 # ---- 6. 停止旧服务 ----
 echo "[6/7] 停止旧服务..."
@@ -81,8 +86,8 @@ echo " 前端: http://localhost:5173"
 echo " 后端: http://localhost:3002"
 echo " 日志: logs/api.log  /  logs/web.log"
 echo ""
-echo " pm2 常用命令："
-echo "   pm2 status      查看服务状态"
-echo "   pm2 logs        查看实时日志"
-echo "   pm2 restart all 重启所有服务"
+echo " 常用命令："
+echo "   pm2 status      查看状态"
+echo "   pm2 logs        实时日志"
+echo "   bash scripts/rollback.sh  回滚"
 echo "============================================"
