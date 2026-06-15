@@ -54,11 +54,19 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install chromium --with-deps
 
-      - name: Start API server + Vite
+      - name: Start servers
         run: |
           npx tsx server/index.ts &
           npx vite --host 0.0.0.0 &
-          sleep 5
+          # wait for both servers to be ready
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:3002/api/health > /dev/null 2>&1 && curl -s http://localhost:5173 > /dev/null 2>&1; then
+              echo "Servers ready"
+              break
+            fi
+            echo "Waiting... ($i)"
+            sleep 2
+          done
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/knowledge_platform
           SESSION_SECRET: ci-secret
@@ -66,8 +74,8 @@ jobs:
           NEXTCLOUD_USER: ci
           NEXTCLOUD_PASS: ci
 
-      - name: Run Playwright (skip drive — needs Nextcloud)
-        run: npx playwright test --project=chromium --ignore-snapshots
+      - name: Run Playwright
+        run: npx playwright test --project=chromium
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/knowledge_platform
           SESSION_SECRET: ci-secret
