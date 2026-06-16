@@ -22,8 +22,14 @@ async function seed() {
     { name: "王五", email: "wangwu@company.com", passwordHash: pwHash, role: "viewer" as const },
     { name: "测试用户", email: "test@test.com", passwordHash: await hashPassword("test123"), role: "editor" as const },
   ];
+  const userIds: Record<string, string> = {};
   for (const u of userRecords) {
     const [row] = await db.insert(users).values(u).onConflictDoNothing().returning();
+    if (row) userIds[u.email] = row.id;
+    else {
+      const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.email, u.email)).limit(1);
+      if (existing) userIds[u.email] = existing.id;
+    }
     console.log(row ? `  User: ${u.email}` : `  User exists: ${u.email}`);
   }
 
@@ -44,10 +50,11 @@ async function seed() {
     console.log(row ? `  Dept: ${d.name}` : `  Dept exists: ${d.name}`);
   }
 
-  // ---- 空间 ----
+  // ---- 空间（带默认审核人） ----
+  const adminId = userIds["admin@company.com"];
   const spaceRecords = [
-    { departmentId: deptIds["技术研发部"], name: "技术研发知识库", description: "技术研发知识共享空间" },
-    { departmentId: deptIds["综合管理部"], name: "综合管理知识库", description: "综合管理知识共享空间" },
+    { departmentId: deptIds["技术研发部"], name: "技术研发知识库", description: "技术研发知识共享空间", defaultReviewerId: adminId },
+    { departmentId: deptIds["综合管理部"], name: "综合管理知识库", description: "综合管理知识共享空间", defaultReviewerId: adminId },
   ];
   for (const s of spaceRecords) {
     if (!s.departmentId) { console.log(`  Space skipped (no dept): ${s.name}`); continue; }

@@ -1,48 +1,21 @@
-import pg from "pg";
 import "dotenv/config";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { eq, isNull } from "drizzle-orm";
+import { knowledgeSpaces, users } from "../server/db/schema";
 
-async function main() {
-  const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL! });
-  const client = await pool.connect();
-  try {
-    // Check current state
-    const { rows: spaces } = await client.query(
-      "SELECT name, default_reviewer_id, id FROM knowledge_spaces"
-    );
-    console.log("当前状态:");
-    for (const s of spaces) {
-      console.log("  " + s.name + " | reviewer: " + (s.default_reviewer_id || "NULL"));
-    }
+const db = drizzle(process.env.DATABASE_URL!);
 
-    // Get admin ID
-    const { rows: admins } = await client.query(
-      "SELECT id FROM users WHERE role = 'admin' LIMIT 1"
-    );
-    if (admins.length === 0) {
-      console.log("没有找到 admin 用户");
-      return;
-    }
-    const adminId = admins[0].id;
+async function fix() {
+  const [admin] = await db.select({ id: users.id }).from(users).where(eq(users.email, "admin@company.com")).limit(1);
+  if (!admin) { console.log("admin 用户不存在"); process.exit(1); }
 
-    // Update all spaces without reviewer
-    const { rowCount } = await client.query(
-      "UPDATE knowledge_spaces SET default_reviewer_id = $1 WHERE default_reviewer_id IS NULL",
-      [adminId]
-    );
-    console.log("已更新 " + (rowCount ?? 0) + " 个空间");
+  const result = await db
+    .update(knowledgeSpaces)
+    .set({ defaultReviewerId: admin.id })
+    .where(isNull(knowledgeSpaces.defaultReviewerId));
 
-    // Verify
-    const { rows: after } = await client.query(
-      "SELECT name, default_reviewer_id FROM knowledge_spaces"
-    );
-    console.log("更新后:");
-    for (const s of after) {
-      console.log("  " + s.name + " | reviewer: " + (s.default_reviewer_id || "NULL"));
-    }
-  } finally {
-    client.release();
-    await pool.end();
-  }
+  console.log(`已为 ${result.rowCount} 个空间设置默认审核人`);
+  process.exit(0);
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+fix();
