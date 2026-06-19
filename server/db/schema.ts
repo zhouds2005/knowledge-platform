@@ -63,6 +63,8 @@ export const users = pgTable(
     name: varchar("name", { length: 100 }).notNull(),
     email: varchar("email", { length: 255 }).notNull().unique(),
     passwordHash: text("password_hash").notNull(),
+    passwordHash: text("password_hash"), // nullable after OIDC migration
+    externalId: varchar("external_id", { length: 255 }).unique(),
     role: roleEnum("role").notNull().default("viewer"),
     departmentId: uuid("department_id"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
