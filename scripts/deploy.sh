@@ -18,6 +18,13 @@ command -v npx >/dev/null 2>&1 || { echo "错误：未安装 npx"; exit 1; }
 command -v pm2 >/dev/null 2>&1 || { echo "提示：pm2 未安装，正在安装..."; npm install -g pm2; }
 echo "      环境就绪"
 
+# ---- 1.5. 安装 LibreOffice（文件预览用） ----
+if ! command -v libreoffice >/dev/null 2>&1; then
+  echo "安装 LibreOffice..."
+  sudo apt-get install -y libreoffice-core libreoffice-writer libreoffice-calc libreoffice-impress
+fi
+mkdir -p /tmp/knowledge-previews
+
 # ---- 2. 启动数据库 ----
 echo "[2/7] 启动 PostgreSQL..."
 if command -v docker >/dev/null 2>&1; then
