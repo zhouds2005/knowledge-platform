@@ -9,15 +9,15 @@ const db = drizzle(process.env.DATABASE_URL!);
 
 // GET /api/knowledge/:id/graph — relation graph for an object
 router.get("/knowledge/:id/graph", requireAuth, async (req, res) => {
-  const objectId = req.params.id as string;
+  const objectId = req.params.id;
 
   const relations = await db
     .select()
     .from(objectRelations)
     .where(
       or(
-        eq(objectRelations.sourceObjectId, objectId),
-        eq(objectRelations.targetObjectId, objectId),
+        eq(objectRelations.sourceObjectId, objectId as string),
+        eq(objectRelations.targetObjectId, objectId as string),
       ),
     );
 
@@ -31,7 +31,7 @@ router.get("/knowledge/:id/graph", requireAuth, async (req, res) => {
   // Fetch related objects
   const objects = relatedIds.size > 0
     ? await db.select().from(knowledgeObjects).where(
-        or(...Array.from(relatedIds).map(id => eq(knowledgeObjects.id, id))),
+        or(...(Array.from(relatedIds).map(id => eq(knowledgeObjects.id, id))) as any),
       )
     : [];
 
@@ -52,11 +52,10 @@ router.post("/knowledge/:id/relation", requireAuth, async (req, res) => {
     return res.status(400).json({ error: "targetId and relationType are required" });
   }
 
-  const id = req.params.id as string;
   const [rel] = await db
     .insert(objectRelations)
     .values({
-      sourceObjectId: id,
+      sourceObjectId: req.params.id as string,
       targetObjectId: targetId,
       relationType,
     })

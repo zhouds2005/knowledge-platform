@@ -1,4 +1,4 @@
-import type { User } from "../middleware/auth";
+interface User { id: string; name: string; email: string; role: string; departmentId: string | null; }
 
 interface KnowledgeObject {
   id: string;
@@ -6,7 +6,6 @@ interface KnowledgeObject {
   ownerId: string;
   departmentId: string;
   status: string;
-  reviewerId: string | null;
 }
 
 interface ExtraGrant {
@@ -31,7 +30,6 @@ export function canRead(
   if (obj.status !== "published") {
     if (obj.ownerId === user.id) return true;
     // Also allow reviewer to read
-    if (obj.reviewerId === user.id) return true;
     const reviewGrant = extraGrants.find(
       (g) => g.granteeType === "user" && g.granteeId === user.id && g.permission === "review",
     );
@@ -77,17 +75,14 @@ export function canEdit(
 
 /**
  * Determine if a user can review (approve/reject) a knowledge object.
- * Admins, designated reviewers, and users with explicit review grants can review.
  */
 export function canReview(
   user: User | undefined,
-  obj: KnowledgeObject,
+  _obj: KnowledgeObject,
   extraGrants: ExtraGrant[] = [],
 ): boolean {
   if (!user) return false;
   if (user.role === "admin") return true;
-  // Check if user is the designated reviewer on the object
-  if (obj.reviewerId === user.id) return true;
 
   return extraGrants.some(
     (g) =>

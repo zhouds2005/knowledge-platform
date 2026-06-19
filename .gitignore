@@ -1,8 +1,31 @@
-node_modules/
-dist/
+# Logs
 .env
+logs
 *.log
-test-results/
-playwright-report/
+console-*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+
+# Playwright artifacts
+page-*.yml
+page-*.png
 .playwright-cli/
+.idea
 .DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

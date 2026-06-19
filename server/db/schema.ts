@@ -8,8 +8,14 @@ import {
   timestamp,
   index,
   pgEnum,
-  uniqueIndex,
+  customType,
 } from "drizzle-orm/pg-core";
+
+// ---- Custom Types ----
+
+const tsvector = customType<{ data: string }>({
+  dataType() { return "tsvector"; },
+});
 
 // ---- Enums ----
 
@@ -77,7 +83,6 @@ export const departments = pgTable("departments", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: varchar("name", { length: 100 }).notNull(),
   parentId: uuid("parent_id"),
-  nextcloudPath: varchar("nextcloud_path", { length: 500 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -94,7 +99,6 @@ export const knowledgeSpaces = pgTable(
       () => users.id,
       { onDelete: "set null" },
     ),
-    nextcloudPath: varchar("nextcloud_path", { length: 500 }),
     autoPublish: boolean("auto_publish").default(false).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
@@ -134,6 +138,9 @@ export const knowledgeObjects = pgTable(
     sourceTable: varchar("source_table", { length: 100 }).notNull(),
     sourceId: uuid("source_id").notNull(),
 
+    // Full-text search vector (managed by database trigger)
+    searchVector: tsvector("search_vector"),
+
     // Stats
     viewCount: integer("view_count").default(0).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -145,7 +152,6 @@ export const knowledgeObjects = pgTable(
     index("idx_knowledge_objects_status").on(t.status),
     index("idx_knowledge_objects_type").on(t.type),
     index("idx_knowledge_objects_owner").on(t.ownerId),
-    index("idx_knowledge_objects_reviewer").on(t.reviewerId),
   ],
 );
 
@@ -156,7 +162,7 @@ export const objectPermissions = pgTable(
     objectId: uuid("object_id")
       .notNull()
       .references(() => knowledgeObjects.id, { onDelete: "cascade" }),
-    granteeType: varchar("grantee_type", { length: 10 }).notNull(),
+    granteeType: varchar("grantee_type", { length: 10 }).notNull(), // "user" | "role"
     granteeId: varchar("grantee_id", { length: 100 }).notNull(),
     permission: permissionEnum("permission").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -220,39 +226,4 @@ export const objectRelations = pgTable(
     index("idx_object_relations_target").on(t.targetObjectId),
     index("idx_object_relations_type").on(t.relationType),
   ],
-);
-
-// ---- New tables: favorites & history ----
-
-export const userFavorites = pgTable(
-  "user_favorites",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    objectId: uuid("object_id")
-      .notNull()
-      .references(() => knowledgeObjects.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-  },
-  (t) => [
-    uniqueIndex("idx_user_favorites_unique").on(t.userId, t.objectId),
-    index("idx_user_favorites_user").on(t.userId),
-  ],
-);
-
-export const userViewHistory = pgTable(
-  "user_view_history",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    objectId: uuid("object_id")
-      .notNull()
-      .references(() => knowledgeObjects.id, { onDelete: "cascade" }),
-    viewedAt: timestamp("viewed_at").defaultNow().notNull(),
-  },
-  (t) => [index("idx_user_view_history_user_time").on(t.userId, t.viewedAt.desc())],
 );

@@ -1,92 +1,86 @@
 # 部门文件共享平台
 
-基于 React + Express + PostgreSQL 的部门级文件共享与知识管理平台，集成 Nextcloud 网盘。
-
-## 功能模块
-
-- **文档管理** — 创建、浏览、搜索知识文档
-- **Wiki 协同** — 多人协作编辑 Wiki 页面，支持版本历史
-- **Nextcloud 网盘** — 部门文件夹自动创建、文件上传/浏览/下载
-- **文档级 RBAC** — 四角色（admin / editor / reviewer / viewer），对象级权限控制
-- **空间审核流** — 提交 → 审核 → 发布 → 归档，完整的生命周期管理
-- **知识门户** — 首页仪表盘，统一搜索，最近更新聚合
-- **知识图谱** — 对象关联关系可视化
+基于 React + Express + PostgreSQL 的统一知识对象管理系统，整合文档管理、Wiki 协同、Nextcloud 网盘。
 
 ## 技术栈
 
-- **前端**：React 18 + Vite + TypeScript + Tailwind CSS + shadcn/ui + TanStack Query
-- **后端**：Express + TypeScript + Drizzle ORM
-- **数据库**：PostgreSQL（`knowledge_platform`）
-- **网盘**：Nextcloud WebDAV API
+- 前端: React 19 + Vite 7 + TypeScript + Tailwind CSS + shadcn/ui
+- 后端: Express 5 + Drizzle ORM + PostgreSQL
+- 认证: Session Cookie
 
 ## 快速开始
 
-### 1. 环境配置
+### 1. 环境准备
 
 ```bash
+# 启动 PostgreSQL（或使用 Docker）
+docker compose up -d
+
+# 安装依赖
+npm install
+
+# 复制环境变量
 cp .env.example .env
-# 编辑 .env 填写数据库连接、Nextcloud 凭据
+# 编辑 .env 修改 DATABASE_URL、SESSION_SECRET 等
 ```
 
-### 2. 初始化数据库
+### 2. 数据库初始化
 
 ```bash
-npx drizzle-kit push
-npx tsx server/db/seed.ts
+# 推送 schema 到数据库
+npm run db:push
+
+# 可选：执行全文搜索 migration
+psql $DATABASE_URL -f server/db/migrations/0001_add_search_vector.sql
+
+# 可选：填充种子数据
+npm run db:seed
 ```
 
-### 3. 启动开发服务器
+### 3. 开发模式
 
 ```bash
-# 后端（端口 3002）
-npx tsx server/index.ts
-
-# 前端（端口 5173，代理到 3002）
-npx vite
+npm run dev        # 启动前端 Vite dev server + API 代理
+npm run server     # 单独启动 API server
 ```
+
+### 4. 生产部署
+
+```bash
+# 构建前端 + 后端
+npm run build:all
+
+# 启动生产服务
+NODE_ENV=production npm start
+```
+
+前端静态文件输出到 `dist/public/`，后端打包为 `dist/index.js`。
+生产环境需配置反向代理（nginx）将 `/api/*` 转发到后端端口，其余请求 serve 静态文件。
+
+## 环境变量
+
+| 变量 | 说明 | 默认值 |
+|---|---|---|
+| `DATABASE_URL` | PostgreSQL 连接 | — |
+| `SESSION_SECRET` | Session 签名密钥 | — |
+| `NEXTCLOUD_URL` | Nextcloud 实例地址 | — |
+| `NEXTCLOUD_USER` | Nextcloud 管理员 | — |
+| `NEXTCLOUD_PASS` | Nextcloud 密码 | — |
+| `PORT` | API 服务端口 | 3002 |
 
 ## 项目结构
 
 ```
 knowledge-platform/
-├── server/
-│   ├── index.ts              # Express 入口
-│   ├── db/schema.ts           # Drizzle 数据库模型
-│   ├── middleware/
-│   │   ├── auth.ts            # 认证中间件
-│   │   └── rbac.ts            # 权限判定中间件
-│   ├── routers/
-│   │   ├── auth.ts            # 登录/注册
-│   │   ├── users.ts           # 用户管理
-│   │   ├── departments.ts     # 部门 CRUD + Nextcloud 文件夹
-│   │   ├── spaces.ts          # 知识空间管理
-│   │   ├── knowledge.ts       # 知识对象 CRUD + 搜索
-│   │   ├── review.ts          # 审核提交/通过/驳回
-│   │   ├── permissions.ts     # 对象权限
-│   │   ├── nextcloud.ts       # 网盘代理
-│   │   ├── graph.ts           # 关联图谱
-│   │   └── notifications.ts   # 通知
-│   └── lib/
-│       ├── password.ts        # 密码哈希
-│       ├── permissions.ts     # RBAC 判定函数
-│       ├── review.ts          # 审核状态机
-│       ├── search.ts          # 全文搜索
-│       ├── notify.ts          # 通知生成
-│       └── nextcloud.ts       # Nextcloud WebDAV 客户端
-├── src/
-│   ├── pages/                 # 页面组件
-│   ├── components/            # 可复用组件
-│   ├── hooks/                 # 自定义 hooks
-│   └── providers/             # Context providers
-└── docs/                      # 设计文档
+├── server/           # Express API
+│   ├── db/           # Drizzle schema + migrations + seed
+│   ├── lib/          # 业务逻辑（权限、搜索、通知等）
+│   ├── middleware/    # 认证 + RBAC 中间件
+│   └── routers/      # API 路由
+├── src/              # React 前端
+│   ├── components/   # 通用组件
+│   ├── pages/        # 页面组件
+│   ├── hooks/        # 自定义 hooks
+│   └── providers/    # React Context（认证）
+└── docs/             # 设计文档
 ```
-
-## 环境变量
-
-| 变量 | 说明 |
-|------|------|
-| `DATABASE_URL` | PostgreSQL 连接串 |
-| `SESSION_SECRET` | Session 加密密钥 |
-| `NEXTCLOUD_URL` | Nextcloud 实例 URL |
-| `NEXTCLOUD_USER` | Nextcloud 用户名 |
-| `NEXTCLOUD_PASS` | Nextcloud 密码 |

@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link2, Search, GitGraph, Star } from "lucide-react";
-import { useAuthContext } from "../providers/AuthProvider";
+import { Link2, Search, GitGraph } from "lucide-react";
 import StatusBadge from "../components/knowledge/StatusBadge";
 import ReviewPanel from "../components/knowledge/ReviewPanel";
 import PermissionEditor from "../components/knowledge/PermissionEditor";
@@ -16,7 +15,6 @@ async function api(path: string, options?: RequestInit) {
 
 export default function KnowledgeDetail() {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuthContext();
   const queryClient = useQueryClient();
   const [showPerms, setShowPerms] = useState(false);
   const [showAttach, setShowAttach] = useState(false);
@@ -43,25 +41,13 @@ export default function KnowledgeDetail() {
   });
 
   const obj = data?.object;
-  const isFavorited = data?.isFavorited ?? false;
   const versions = data?.versions ?? [];
   const graphNodes = graphData?.nodes ?? [];
   const graphEdges = graphData?.edges ?? [];
   const related = graphNodes.filter((n: any) => n.id !== id);
 
-  const favMut = useMutation({
-    mutationFn: () => {
-      const method = isFavorited ? "DELETE" : "POST";
-      return api(`/api/knowledge/${id}/favorite`, { method });
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["knowledge", id] }); queryClient.invalidateQueries({ queryKey: ["favorites"] }); },
-  });
-
   if (isLoading) return <div className="p-8 text-slate-400">加载中…</div>;
   if (!obj) return <div className="p-8 text-slate-500">未找到该知识对象</div>;
-
-  const isOwner = user?.id === obj.ownerId;
-  const isReviewer = user?.id === obj.reviewerId;
 
   return (
     <div className="px-6 py-8">
@@ -73,11 +59,6 @@ export default function KnowledgeDetail() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => favMut.mutate()} disabled={favMut.isPending}
-            className={`px-3 py-1.5 border rounded-lg text-sm hover:bg-slate-50 flex items-center gap-1 ${isFavorited ? "text-yellow-500 border-yellow-300" : ""}`}>
-            <Star className={`h-3.5 w-3.5 ${isFavorited ? "fill-yellow-400" : ""}`} />
-            {isFavorited ? "已收藏" : "收藏"}
-          </button>
           {obj.type === "wiki" && <Link to={`/knowledge/${id}/edit`} className="px-3 py-1.5 border rounded-lg text-sm hover:bg-slate-50">编辑</Link>}
           {related.length > 0 && (
             <button onClick={() => setShowGraph(!showGraph)} className={`px-3 py-1.5 border rounded-lg text-sm hover:bg-slate-50 flex items-center gap-1 ${showGraph ? "bg-blue-50 border-blue-200 text-blue-700" : ""}`}>
@@ -89,8 +70,12 @@ export default function KnowledgeDetail() {
         </div>
       </div>
 
+      {/* Knowledge Graph */}
       {showGraph && related.length > 0 && (
-        <div className="mb-6"><h2 className="text-sm font-semibold text-slate-700 mb-3">知识图谱</h2><KnowledgeGraph nodes={graphNodes} edges={graphEdges} /></div>
+        <div className="mb-6">
+          <h2 className="text-sm font-semibold text-slate-700 mb-3">知识图谱</h2>
+          <KnowledgeGraph nodes={graphNodes} edges={graphEdges} />
+        </div>
       )}
 
       {obj.description && <div className="bg-white rounded-xl border p-6 mb-6"><p className="text-slate-700 whitespace-pre-wrap">{obj.description}</p></div>}
@@ -108,14 +93,17 @@ export default function KnowledgeDetail() {
         </div>
       )}
 
-      <ReviewPanel objectId={id!} status={obj.status} userRole={user?.role ?? "viewer"} isOwner={isOwner} isReviewer={isReviewer} />
+      <ReviewPanel objectId={id!} status={obj.status} />
 
+      {/* Attach modal */}
       {showAttach && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowAttach(false)}>
           <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-semibold mb-4">添加关联</h3>
             <div className="relative mb-4"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" /><input value={attachQ} onChange={e => setAttachQ(e.target.value)} placeholder="搜索文档、Wiki、网盘文件…" className="w-full pl-10 pr-4 py-2 border rounded-lg text-sm" /></div>
-            <div className="max-h-60 overflow-y-auto space-y-1">{(searchRes?.objects ?? []).filter((o: any) => o.id !== id).map((o: any) => (<button key={o.id} onClick={() => attachMut.mutate(o.id)} className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-sm border"><span className="font-medium">{o.title}</span><span className="text-xs text-slate-400 ml-2">{o.type}</span></button>))}</div>
+            <div className="max-h-60 overflow-y-auto space-y-1">
+              {(searchRes?.objects ?? []).filter((o: any) => o.id !== id).map((o: any) => (<button key={o.id} onClick={() => attachMut.mutate(o.id)} className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-sm border"><span className="font-medium">{o.title}</span><span className="text-xs text-slate-400 ml-2">{o.type}</span></button>))}
+            </div>
           </div>
         </div>
       )}

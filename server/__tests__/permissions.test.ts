@@ -4,8 +4,7 @@ import { canRead, canEdit, canReview } from "../lib/permissions";
 const adminUser = { id: "u1", name: "Admin", email: "a@t.com", role: "admin", departmentId: "d1" };
 const editorUser = { id: "u2", name: "Ed", email: "e@t.com", role: "editor", departmentId: "d1" };
 const viewerUser = { id: "u3", name: "Vw", email: "v@t.com", role: "viewer", departmentId: "d2" };
-const reviewerUser = { id: "u4", name: "Rv", email: "r@t.com", role: "editor", departmentId: "d1" };
-const baseObj = { id: "o1", visibility: "department" as const, ownerId: "u2", departmentId: "d1", status: "published", reviewerId: null as string | null };
+const baseObj = { id: "o1", visibility: "department" as const, ownerId: "u2", departmentId: "d1", status: "published" };
 
 describe("canRead", () => {
   it("should allow admin to read anything", () => expect(canRead(adminUser, baseObj)).toBe(true));
@@ -47,13 +46,5 @@ describe("canReview", () => {
   it("should deny regular user", () => expect(canReview(editorUser, baseObj)).toBe(false));
   it("should allow explicit review grant", () => {
     expect(canReview(editorUser, baseObj, [{ granteeType: "user", granteeId: "u2", permission: "review" }])).toBe(true);
-  });
-  it("should allow designated reviewer", () => {
-    const obj = { ...baseObj, reviewerId: "u4" };
-    expect(canReview(reviewerUser, obj)).toBe(true);
-  });
-  it("should deny non-designated reviewer", () => {
-    const obj = { ...baseObj, reviewerId: "u4" };
-    expect(canReview(editorUser, obj)).toBe(false);
   });
 });

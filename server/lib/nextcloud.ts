@@ -37,8 +37,8 @@ export async function downloadFile(filePath: string): Promise<Response> {
   return request("GET", filePath);
 }
 
-export async function uploadFile(dirPath: string, fileName: string, content: Buffer): Promise<boolean> {
-  const res = await request("PUT", `${dirPath}${fileName}`, content as unknown as BodyInit);
+export async function uploadFile(dirPath: string, fileName: string, content: Uint8Array): Promise<boolean> {
+  const res = await request("PUT", `${dirPath}${fileName}`, content as any);
   return res.ok;
 }
 

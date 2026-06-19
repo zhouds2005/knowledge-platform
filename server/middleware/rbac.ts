@@ -25,13 +25,13 @@ async function loadAndCheck(
   next: NextFunction,
   action: "read" | "edit" | "review",
 ) {
-  const objectId = req.params.id as string;
+  const objectId = req.params.id;
   if (!objectId) return res.status(400).json({ error: "Missing object id" });
 
   const [obj] = await db
     .select()
     .from(knowledgeObjects)
-    .where(eq(knowledgeObjects.id, objectId))
+    .where(eq(knowledgeObjects.id, objectId as string))
     .limit(1);
 
   if (!obj) return res.status(404).json({ error: "Not found" });
@@ -39,7 +39,7 @@ async function loadAndCheck(
   const grants = await db
     .select()
     .from(objectPermissions)
-    .where(eq(objectPermissions.objectId, objectId));
+    .where(eq(objectPermissions.objectId, objectId as string));
 
   const extraGrants = grants.map((g) => ({
     granteeType: g.granteeType,
@@ -53,7 +53,6 @@ async function loadAndCheck(
     ownerId: obj.ownerId,
     departmentId: obj.departmentId,
     status: obj.status,
-    reviewerId: obj.reviewerId,
   };
 
   let allowed = false;

@@ -16,8 +16,6 @@ export interface AuthRequest extends Request {
   };
 }
 
-export type User = NonNullable<AuthRequest["user"]>;
-
 const SESSION_COOKIE = "kp_sid";
 
 /**

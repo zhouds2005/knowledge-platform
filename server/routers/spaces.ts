@@ -1,10 +1,9 @@
 import { Router } from "express";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
-import { knowledgeSpaces, departments } from "../db/schema";
+import { knowledgeSpaces } from "../db/schema";
+import { knowledgeObjects } from "../db/schema";
 import { requireAuth } from "../middleware/auth";
-import { validate, createSpaceSchema, updateSpaceSchema } from "../lib/validate";
-import { ensureFolder } from "../lib/nextcloud";
 
 const router = Router();
 const db = drizzle(process.env.DATABASE_URL!);
@@ -17,11 +16,10 @@ router.get("/spaces", requireAuth, async (_req, res) => {
 
 // GET /api/spaces/:id
 router.get("/spaces/:id", requireAuth, async (req, res) => {
-  const id = req.params.id as string;
   const [space] = await db
     .select()
     .from(knowledgeSpaces)
-    .where(eq(knowledgeSpaces.id, id))
+    .where(eq(knowledgeSpaces.id, req.params.id as string))
     .limit(1);
 
   if (!space) return res.status(404).json({ error: "Space not found" });
@@ -29,46 +27,26 @@ router.get("/spaces/:id", requireAuth, async (req, res) => {
 });
 
 // POST /api/spaces
-router.post("/spaces", requireAuth, validate(createSpaceSchema), async (req, res) => {
+router.post("/spaces", requireAuth, async (req, res) => {
   const { departmentId, name, description, defaultReviewerId } = req.body;
   if (!departmentId || !name)
     return res.status(400).json({ error: "departmentId and name are required" });
 
-  // Build nextcloud path: department_path/space_name
-  let folderPath: string | null = null;
-  const [dept] = await db
-    .select({ nextcloudPath: departments.nextcloudPath })
-    .from(departments)
-    .where(eq(departments.id, departmentId))
-    .limit(1);
-
-  if (dept?.nextcloudPath) {
-    folderPath = dept.nextcloudPath + "/" + name;
-    await ensureFolder(folderPath).catch(() => {});
-  }
-
   const [space] = await db
     .insert(knowledgeSpaces)
-    .values({
-      departmentId,
-      name,
-      description: description || null,
-      defaultReviewerId: defaultReviewerId || null,
-      nextcloudPath: folderPath,
-    })
+    .values({ departmentId, name, description: description || null, defaultReviewerId: defaultReviewerId || null })
     .returning();
 
   return res.json({ space });
 });
 
 // PUT /api/spaces/:id
-router.put("/spaces/:id", requireAuth, validate(updateSpaceSchema), async (req, res) => {
-  const id = req.params.id as string;
+router.put("/spaces/:id", requireAuth, async (req, res) => {
   const { name, description, defaultReviewerId, autoPublish } = req.body;
   const [space] = await db
     .update(knowledgeSpaces)
     .set({ name, description, defaultReviewerId, autoPublish })
-    .where(eq(knowledgeSpaces.id, id))
+    .where(eq(knowledgeSpaces.id, req.params.id as string))
     .returning();
 
   if (!space) return res.status(404).json({ error: "Space not found" });
@@ -77,8 +55,17 @@ router.put("/spaces/:id", requireAuth, validate(updateSpaceSchema), async (req, 
 
 // DELETE /api/spaces/:id
 router.delete("/spaces/:id", requireAuth, async (req, res) => {
-  const id = req.params.id as string;
-  await db.delete(knowledgeSpaces).where(eq(knowledgeSpaces.id, id));
+  // 检查空间下是否有知识对象
+  const children = await db
+    .select({ id: knowledgeObjects.id })
+    .from(knowledgeObjects)
+    .where(eq(knowledgeObjects.spaceId, req.params.id as string))
+    .limit(1);
+  if (children.length > 0) {
+    return res.status(400).json({ error: "该空间下仍有知识对象，无法删除" });
+  }
+
+  await db.delete(knowledgeSpaces).where(eq(knowledgeSpaces.id, req.params.id as string));
   return res.json({ ok: true });
 });
 

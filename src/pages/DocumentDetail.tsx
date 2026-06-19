@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Star } from "lucide-react";
-import { useAuthContext } from "../providers/AuthProvider";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft } from "lucide-react";
 import StatusBadge from "../components/knowledge/StatusBadge";
 import ReviewPanel from "../components/knowledge/ReviewPanel";
 import PermissionEditor from "../components/knowledge/PermissionEditor";
@@ -15,8 +14,6 @@ async function api(path: string, options?: RequestInit) {
 
 export default function DocumentDetail() {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuthContext();
-  const queryClient = useQueryClient();
   const [showPerms, setShowPerms] = useState(false);
 
   const { data, isLoading } = useQuery({
@@ -32,23 +29,11 @@ export default function DocumentDetail() {
   });
 
   const obj = data?.object;
-  const isFavorited = data?.isFavorited ?? false;
   const versions = data?.versions ?? [];
   const related = (graphData?.nodes ?? []).filter((n: any) => n.id !== id);
 
-  const favMut = useMutation({
-    mutationFn: () => {
-      const method = isFavorited ? "DELETE" : "POST";
-      return api(`/api/knowledge/${id}/favorite`, { method });
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["knowledge", id] }); queryClient.invalidateQueries({ queryKey: ["favorites"] }); },
-  });
-
   if (isLoading) return <div className="p-8 text-slate-400">加载中…</div>;
   if (!obj) return <div className="p-8 text-slate-500">未找到该文档</div>;
-
-  const isOwner = user?.id === obj.ownerId;
-  const isReviewer = user?.id === obj.reviewerId;
 
   return (
     <div className="px-6 py-8">
@@ -68,11 +53,6 @@ export default function DocumentDetail() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => favMut.mutate()} disabled={favMut.isPending}
-            className={`px-3 py-1.5 border rounded-lg text-sm hover:bg-slate-50 flex items-center gap-1 ${isFavorited ? "text-yellow-500 border-yellow-300" : ""}`}>
-            <Star className={`h-3.5 w-3.5 ${isFavorited ? "fill-yellow-400" : ""}`} />
-            {isFavorited ? "已收藏" : "收藏"}
-          </button>
           <button onClick={() => setShowPerms(true)} className="px-3 py-1.5 border rounded-lg text-sm hover:bg-slate-50">权限</button>
         </div>
       </div>
@@ -126,7 +106,7 @@ export default function DocumentDetail() {
         </div>
       )}
 
-      <ReviewPanel objectId={id!} status={obj.status} userRole={user?.role ?? "viewer"} isOwner={isOwner} isReviewer={isReviewer} />
+      <ReviewPanel objectId={id!} status={obj.status} />
 
       {showPerms && <PermissionEditor objectId={id!} onClose={() => setShowPerms(false)} />}
     </div>

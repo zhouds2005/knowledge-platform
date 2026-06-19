@@ -12,7 +12,6 @@ export default function NotificationBell() {
   const { data } = useQuery({ queryKey: ["notifications"], queryFn: () => api("/api/notifications"), refetchInterval: 30000 });
   const unread = data?.unreadCount ?? 0;
 
-
   return (
     <Link to="/notifications" className="relative p-2 rounded-lg hover:bg-slate-100 transition-colors">
       <Bell className="h-5 w-5 text-slate-600" />

@@ -2,7 +2,7 @@
  * Integration tests for knowledge object lifecycle: create → submit → approve → reject → resubmit.
  * Requires PostgreSQL with DATABASE_URL set and seed data.
  */
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll } from "vitest";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
 import { users, knowledgeObjects, knowledgeSpaces } from "../../db/schema";
@@ -15,13 +15,6 @@ const TEST_PASS = "test123";
 
 let testUserId: string;
 
-async function setReviewer(spaceId: string) {
-  await db
-    .update(knowledgeSpaces)
-    .set({ defaultReviewerId: testUserId })
-    .where(eq(knowledgeSpaces.id, spaceId));
-}
-
 describe("Knowledge Object Lifecycle", () => {
   beforeAll(async () => {
     await db.delete(users).where(eq(users.email, TEST_EMAIL));
@@ -31,14 +24,9 @@ describe("Knowledge Object Lifecycle", () => {
     testUserId = user.id;
   });
 
-  afterAll(async () => {
-    await db.delete(users).where(eq(users.email, TEST_EMAIL));
-  });
-
   it("should go from draft → published via review", async () => {
     const [space] = await db.select().from(knowledgeSpaces).limit(1);
     expect(space).toBeDefined();
-    await setReviewer(space.id);
 
     const sourceId = crypto.randomUUID();
     const [obj] = await db.insert(knowledgeObjects).values({
@@ -57,8 +45,6 @@ describe("Knowledge Object Lifecycle", () => {
 
   it("should reject and allow resubmit", async () => {
     const [space] = await db.select().from(knowledgeSpaces).limit(1);
-    await setReviewer(space.id);
-
     const sourceId = crypto.randomUUID();
     const [obj] = await db.insert(knowledgeObjects).values({
       type: "wiki", title: "Reject Test", departmentId: space.departmentId,

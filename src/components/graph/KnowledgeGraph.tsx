@@ -132,6 +132,7 @@ export default function KnowledgeGraph({ nodes, edges }: Props) {
 
   const positions = simulate(nodes, edges, size.width, size.height);
 
+  // Quick edge lookup set (reserved for future use)
 
   return (
     <div ref={containerRef} className="w-full bg-white rounded-xl border overflow-hidden" style={{ minHeight: 320 }}>

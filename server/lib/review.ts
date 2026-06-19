@@ -7,11 +7,9 @@ const db = drizzle(process.env.DATABASE_URL!);
 export async function submitForReview(objectId: string) {
   const [obj] = await db.select().from(knowledgeObjects).where(eq(knowledgeObjects.id, objectId)).limit(1);
   if (!obj) throw new Error("Object not found");
-  if (obj.status !== "draft") throw new Error("Cannot submit object in " + JSON.stringify(obj.status) + " status");
+  if (obj.status !== "draft") throw new Error(`Cannot submit object in "${obj.status}" status`);
 
   const reviewerId = obj.reviewerId || await getSpaceReviewer(obj.spaceId);
-  if (!reviewerId) throw new Error("No reviewer assigned — space has no default reviewer");
-
   const [updated] = await db
     .update(knowledgeObjects)
     .set({ status: "pending_review", reviewerId, updatedAt: new Date() })
@@ -30,16 +28,10 @@ async function getSpaceReviewer(spaceId: string): Promise<string | null> {
   return space?.reviewerId ?? null;
 }
 
-export async function approveReview(objectId: string, reviewerUserId: string, isAdmin?: boolean) {
+export async function approveReview(objectId: string, reviewerUserId: string) {
   const [obj] = await db.select().from(knowledgeObjects).where(eq(knowledgeObjects.id, objectId)).limit(1);
   if (!obj) throw new Error("Object not found");
-  if (obj.status !== "pending_review") {
-    throw new Error("Cannot approve object in " + JSON.stringify(obj.status) + " status");
-  }
-  // Admin bypasses reviewer check; others must be the designated reviewer
-  if (!isAdmin && obj.reviewerId && reviewerUserId !== obj.reviewerId) {
-    throw new Error("Not authorized to review this object");
-  }
+  if (obj.status !== "pending_review") throw new Error(`Cannot approve object in "${obj.status}" status`);
 
   // Archive any existing published version with the same source
   await db
@@ -64,15 +56,10 @@ export async function approveReview(objectId: string, reviewerUserId: string, is
   return updated;
 }
 
-export async function rejectReview(objectId: string, reviewerUserId: string, comment?: string, isAdmin?: boolean) {
+export async function rejectReview(objectId: string, reviewerUserId: string, comment?: string) {
   const [obj] = await db.select().from(knowledgeObjects).where(eq(knowledgeObjects.id, objectId)).limit(1);
   if (!obj) throw new Error("Object not found");
-  if (obj.status !== "pending_review") {
-    throw new Error("Cannot reject object in " + JSON.stringify(obj.status) + " status");
-  }
-  if (!isAdmin && obj.reviewerId && reviewerUserId !== obj.reviewerId) {
-    throw new Error("Not authorized to review this object");
-  }
+  if (obj.status !== "pending_review") throw new Error(`Cannot reject object in "${obj.status}" status`);
 
   await db.insert(reviewRecords).values({ objectId, reviewerId: reviewerUserId, action: "rejected", comment: comment || null });
 

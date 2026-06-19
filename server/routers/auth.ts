@@ -44,7 +44,7 @@ router.post("/auth/login", async (req, res) => {
 
     res.cookie(SESSION_COOKIE, session.id, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false, // set true in production
       sameSite: "lax",
       maxAge: SESSION_MAX_AGE_MS,
       path: "/",

@@ -11,12 +11,10 @@ import reviewRouter from "./routers/review";
 import nextcloudRouter from "./routers/nextcloud";
 import graphRouter from "./routers/graph";
 import notificationsRouter from "./routers/notifications";
-import favoritesRouter from "./routers/favorites";
-import historyRouter from "./routers/history";
 import usersRouter from "./routers/users";
 
 const app = express();
-const PORT = 3002;
+const PORT = parseInt(process.env.PORT || "3002", 10);
 
 app.use(express.json());
 app.use(cookieParser());
@@ -31,8 +29,6 @@ app.use("/api", reviewRouter);
 app.use("/api", nextcloudRouter);
 app.use("/api", graphRouter);
 app.use("/api", notificationsRouter);
-app.use("/api", favoritesRouter);
-app.use("/api", historyRouter);
 app.use("/api", usersRouter);
 
 app.get("/api/health", (_req, res) => {
