@@ -62,7 +62,6 @@ export const users = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     name: varchar("name", { length: 100 }).notNull(),
     email: varchar("email", { length: 255 }).notNull().unique(),
-    passwordHash: text("password_hash").notNull(),
     passwordHash: text("password_hash"), // nullable after OIDC migration
     externalId: varchar("external_id", { length: 255 }).unique(),
     role: roleEnum("role").notNull().default("viewer"),
@@ -85,6 +84,7 @@ export const departments = pgTable("departments", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: varchar("name", { length: 100 }).notNull(),
   parentId: uuid("parent_id"),
+  nextcloudPath: text("nextcloud_path"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -101,25 +101,14 @@ export const knowledgeSpaces = pgTable(
       () => users.id,
       { onDelete: "set null" },
     ),
-    autoPublish: boolean("auto_publish").default(false).notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+  autoPublish: boolean("auto_publish").default(false).notNull(),
+  nextcloudPath: text("nextcloud_path"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (t) => [index("idx_knowledge_spaces_department").on(t.departmentId)],
 );
 
 export const knowledgeObjects = pgTable(
-export const spaceMembers = pgTable(
-  "space_members",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    spaceId: uuid("space_id").notNull().references(() => knowledgeSpaces.id, { onDelete: "cascade" }),
-    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-    role: varchar("role", { length: 20 }).notNull().default("member"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-  },
-  (t) => [index("idx_space_members_space").on(t.spaceId), index("idx_space_members_user").on(t.userId)],
-);
-
   "knowledge_objects",
   {
     id: uuid("id").defaultRandom().primaryKey(),
@@ -172,6 +161,18 @@ export const spaceMembers = pgTable(
   ],
 );
 
+export const spaceMembers = pgTable(
+  "space_members",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    spaceId: uuid("space_id").notNull().references(() => knowledgeSpaces.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    role: varchar("role", { length: 20 }).notNull().default("member"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [index("idx_space_members_space").on(t.spaceId), index("idx_space_members_user").on(t.userId)],
+);
+
 export const objectPermissions = pgTable(
   "object_permissions",
   {
@@ -191,22 +192,6 @@ export const objectPermissions = pgTable(
 );
 
 export const reviewRecords = pgTable(
-export const knowledgeFileVersions = pgTable(
-  "knowledge_file_versions",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    objectId: uuid("object_id").notNull().references(() => knowledgeObjects.id, { onDelete: "cascade" }),
-    version: integer("version").notNull(),
-    filePath: text("file_path").notNull(),
-    fileSize: integer("file_size"),
-    fileHash: varchar("file_hash", { length: 128 }),
-    fileName: varchar("file_name", { length: 500 }),
-    fileType: varchar("file_type", { length: 100 }),
-    uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
-  },
-  (t) => [index("idx_kfv_object").on(t.objectId)],
-);
-
   "review_records",
   {
     id: uuid("id").defaultRandom().primaryKey(),
@@ -221,6 +206,22 @@ export const knowledgeFileVersions = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (t) => [index("idx_review_records_object").on(t.objectId)],
+);
+
+export const knowledgeFileVersions = pgTable(
+  "knowledge_file_versions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    objectId: uuid("object_id").notNull().references(() => knowledgeObjects.id, { onDelete: "cascade" }),
+    version: integer("version").notNull(),
+    filePath: text("file_path").notNull(),
+    fileSize: integer("file_size"),
+    fileHash: varchar("file_hash", { length: 128 }),
+    fileName: varchar("file_name", { length: 500 }),
+    fileType: varchar("file_type", { length: 100 }),
+    uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+  },
+  (t) => [index("idx_kfv_object").on(t.objectId)],
 );
 
 export const notifications = pgTable(
@@ -260,3 +261,23 @@ export const objectRelations = pgTable(
     index("idx_object_relations_type").on(t.relationType),
   ],
 );
+
+export const userFavorites = pgTable("user_favorites", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  objectId: uuid("object_id").notNull().references(() => knowledgeObjects.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => [
+  index("idx_user_favorites_user").on(t.userId),
+  index("idx_user_favorites_user_object").on(t.userId, t.objectId),
+]);
+
+export const userViewHistory = pgTable("user_view_history", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  objectId: uuid("object_id").notNull().references(() => knowledgeObjects.id, { onDelete: "cascade" }),
+  viewedAt: timestamp("viewed_at").defaultNow().notNull(),
+}, (t) => [
+  index("idx_user_view_history_user").on(t.userId),
+  index("idx_user_view_history_user_object").on(t.userId, t.objectId),
+]);
