@@ -1,20 +1,25 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
-import StatusBadge from "../components/knowledge/StatusBadge";
-import ReviewPanel from "../components/knowledge/ReviewPanel";
-import PermissionEditor from "../components/knowledge/PermissionEditor";
+import { cn } from "../lib/utils";
+import FilePreview from "../components/common/FilePreview";
 
-async function api(path: string, options?: RequestInit) {
-  const res = await fetch(path, { credentials: "include", headers: { "Content-Type": "application/json" }, ...options });
-  if (!res.ok) throw new Error(`Failed: ${res.status}`);
+async function api(path: string) {
+  const res = await fetch(path, { credentials: "include" });
+  if (!res.ok) throw new Error("Failed");
   return res.json();
 }
 
+const statusConfig: Record<string, { label: string; cls: string }> = {
+  published: { label: "已发布", cls: "bg-success-light text-success" },
+  draft: { label: "草稿", cls: "bg-slate-100 text-slate-500" },
+  pending_review: { label: "审核中", cls: "bg-warning-light text-warning" },
+  archived: { label: "已归档", cls: "bg-danger-light text-danger" },
+};
+
 export default function DocumentDetail() {
   const { id } = useParams<{ id: string }>();
-  const [showPerms, setShowPerms] = useState(false);
+  const [previewFile, setPreviewFile] = useState<{ path: string; name: string; downloadUrl: string } | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["knowledge", id],
@@ -22,93 +27,99 @@ export default function DocumentDetail() {
     enabled: !!id,
   });
 
-  const { data: graphData } = useQuery({
-    queryKey: ["knowledge", id, "graph"],
-    queryFn: () => api(`/api/knowledge/${id}/graph`),
-    enabled: !!id,
-  });
-
   const obj = data?.object;
   const versions = data?.versions ?? [];
-  const related = (graphData?.nodes ?? []).filter((n: any) => n.id !== id);
 
-  if (isLoading) return <div className="p-8 text-slate-400">加载中…</div>;
-  if (!obj) return <div className="p-8 text-slate-500">未找到该文档</div>;
+  if (isLoading) return <div className="px-8 py-7 text-text-muted">加载中…</div>;
+  if (!obj) return <div className="px-8 py-7 text-danger">文档不存在</div>;
+
+  const sc = statusConfig[obj.status] ?? { label: obj.status, cls: "" };
 
   return (
-    <div className="px-6 py-8">
-      <Link to="/" className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-slate-600 mb-4">
-        <ArrowLeft className="h-3.5 w-3.5" />返回首页
-      </Link>
+    <div className="px-8 py-7 max-w-4xl">
+      {/* Breadcrumb */}
+      <div className="flex gap-1.5 items-center text-[13px] text-text-muted mb-5">
+        <Link to="/" className="text-accent hover:underline">工作台</Link>
+        <span>/</span>
+        <span>{obj.spaceName ?? "—"}</span>
+        <span>/</span>
+        <span className="text-text">{obj.title}</span>
+      </div>
 
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">{obj.title}</h1>
-          <div className="flex items-center gap-2 text-sm text-slate-500">
-            <StatusBadge status={obj.status} />
-            <span>·</span>
-            <span>版本 {obj.version}</span>
-            <span>·</span>
-            <span>{obj.viewCount} 次浏览</span>
-          </div>
+      {/* Header */}
+      <div className="mb-6">
+        <h2 className="font-serif text-2xl font-bold mb-2">{obj.title}</h2>
+        <div className="flex flex-wrap gap-4 text-[13px] text-text-muted">
+          <span>作者：{obj.ownerName ?? "—"}</span>
+          <span>版本：v{obj.version}</span>
+          <span className={cn("text-xs px-2.5 py-1 rounded-full font-medium", sc.cls)}>{sc.label}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setShowPerms(true)} className="px-3 py-1.5 border rounded-lg text-sm hover:bg-slate-50">权限</button>
+        <div className="flex gap-2 mt-3">
+          <button className="btn btn-primary btn-sm">预览</button>
+          <button className="btn btn-sm">下载</button>
+          <button className="btn btn-sm">编辑</button>
+          <button className="btn btn-sm ml-auto text-danger border-danger-light">删除</button>
         </div>
       </div>
 
-      {obj.description && (
-        <div className="bg-white rounded-xl border p-6 mb-6">
-          <p className="text-slate-700 whitespace-pre-wrap leading-relaxed">{obj.description}</p>
-        </div>
-      )}
+      {/* Tabs */}
+      <div className="flex border-b-2 border-border mb-5">
+        {["基本信息", "版本历史"].map((t, i) => (
+          <button key={t} className={cn("px-5 py-2 text-sm -mb-0.5 transition-colors", i === 0 ? "text-accent border-b-2 border-accent font-semibold" : "text-text-muted hover:text-text")}>{t}</button>
+        ))}
+      </div>
 
-      {obj.tags?.length > 0 && (
-        <div className="flex gap-2 flex-wrap mb-6">
-          {obj.tags.map((t: string) => (
-            <span key={t} className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded">{t}</span>
-          ))}
-        </div>
-      )}
+      {/* Description */}
+      <div className="bg-card-bg border border-border rounded-lg p-5 mb-5">
+        <h3 className="text-[15px] font-semibold mb-3">文档说明</h3>
+        <p className="text-sm leading-relaxed">{obj.description || "暂无说明"}</p>
+      </div>
 
-      {versions.length > 1 && (
-        <div className="mb-6">
-          <h2 className="text-sm font-semibold text-slate-700 mb-3">版本历史</h2>
-          <div className="space-y-1">
-            {versions.map((v: any) => (
-              <Link
-                key={v.id}
-                to={`/documents/${v.id}`}
-                className={`flex items-center justify-between px-4 py-2 rounded-lg border text-sm ${v.id === id ? "bg-blue-50 border-blue-200" : "bg-white hover:bg-slate-50"}`}
-              >
-                <span className="font-medium">v{v.version}</span>
-                <StatusBadge status={v.status} />
-                <span className="text-xs text-slate-400">{new Date(v.updatedAt).toLocaleDateString("zh-CN")}</span>
-              </Link>
-            ))}
+      {/* Attachments */}
+      <div className="bg-card-bg border border-border rounded-lg p-5 mb-5">
+        <h3 className="text-[15px] font-semibold mb-3">附件文件</h3>
+        {obj.filePath ? (
+          <div className="flex items-center bg-page-bg border border-border rounded-lg px-4 py-2.5">
+            <span className="text-sm font-medium flex-1 truncate">{obj.fileName ?? obj.filePath.split("/").pop()}</span>
+            <button className="btn btn-sm text-xs" onClick={() => setPreviewFile({ path: obj.filePath, name: obj.fileName ?? "文件", downloadUrl: `/api/drive/download?path=${encodeURIComponent(obj.filePath)}` })}>预览</button>
+            <a href={`/api/drive/download?path=${encodeURIComponent(obj.filePath)}`} className="btn btn-sm text-xs ml-1">下载</a>
           </div>
-        </div>
-      )}
+        ) : (
+          <p className="text-sm text-text-muted">暂无附件</p>
+        )}
+      </div>
 
-      {related.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-sm font-semibold text-slate-700 mb-3">关联内容</h2>
-          <div className="space-y-2">
-            {related.map((n: any) => (
-              <Link key={n.id} to={`/knowledge/${n.id}`} className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl border hover:border-blue-200">
-                <span className={`text-xs px-2 py-0.5 rounded-full ${n.type === "document" ? "bg-blue-100 text-blue-700" : n.type === "wiki" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}`}>
-                  {n.type === "document" ? "文档" : n.type === "wiki" ? "Wiki" : "网盘"}
-                </span>
-                <span className="text-sm font-medium text-slate-800">{n.title}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Version History */}
+      <div className="bg-card-bg border border-border rounded-lg p-5">
+        <h3 className="text-[15px] font-semibold mb-3">版本历史</h3>
+        {versions.length === 0 ? (
+          <p className="text-sm text-text-muted">暂无历史版本</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr>
+                <th className="text-left px-3 py-2 text-xs text-text-muted uppercase tracking-wider font-semibold border-b border-border">版本</th>
+                <th className="text-left px-3 py-2 text-xs text-text-muted uppercase tracking-wider font-semibold border-b border-border">状态</th>
+                <th className="text-left px-3 py-2 text-xs text-text-muted uppercase tracking-wider font-semibold border-b border-border">更新时间</th>
+              </tr>
+            </thead>
+            <tbody>
+              {versions.map((v: any) => {
+                const vs = statusConfig[v.status] ?? { label: v.status, cls: "" };
+                return (
+                  <tr key={v.id} className="hover:bg-card-hover transition-colors">
+                    <td className="px-3 py-2 font-semibold border-b border-border">v{v.version}</td>
+                    <td className="px-3 py-2 border-b border-border"><span className={cn("text-[11px] px-1.5 py-0.5 rounded", vs.cls)}>{vs.label}</span></td>
+                    <td className="px-3 py-2 text-text-muted border-b border-border">{new Date(v.updatedAt).toLocaleString("zh-CN")}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
 
-      <ReviewPanel objectId={id!} status={obj.status} />
-
-      {showPerms && <PermissionEditor objectId={id!} onClose={() => setShowPerms(false)} />}
+      {previewFile && <FilePreview open {...previewFile} onClose={() => setPreviewFile(null)} />}
     </div>
   );
 }
