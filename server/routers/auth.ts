@@ -34,6 +34,7 @@ router.post("/auth/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
+    if (!user.passwordHash) return res.status(401).json({ error: '此账号使用统一认证登录' });
     const valid = await verifyPassword(password, user.passwordHash);
     if (!valid) {
       return res.status(401).json({ error: "Invalid email or password" });

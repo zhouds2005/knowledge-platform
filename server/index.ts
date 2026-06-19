@@ -1,4 +1,5 @@
 import "dotenv/config";
+import previewRouter from './routers/preview';
 import express from "express";
 import cookieParser from "cookie-parser";
 import { loadAuth } from "./middleware/auth";
@@ -20,6 +21,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(loadAuth);
 
+app.use('/api', previewRouter);
 app.use("/api", authRouter);
 app.use("/api", departmentsRouter);
 app.use("/api", spacesRouter);

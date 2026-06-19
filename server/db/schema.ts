@@ -108,6 +108,18 @@ export const knowledgeSpaces = pgTable(
 );
 
 export const knowledgeObjects = pgTable(
+export const spaceMembers = pgTable(
+  "space_members",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    spaceId: uuid("space_id").notNull().references(() => knowledgeSpaces.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    role: varchar("role", { length: 20 }).notNull().default("member"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [index("idx_space_members_space").on(t.spaceId), index("idx_space_members_user").on(t.userId)],
+);
+
   "knowledge_objects",
   {
     id: uuid("id").defaultRandom().primaryKey(),
@@ -143,6 +155,9 @@ export const knowledgeObjects = pgTable(
     // Full-text search vector (managed by database trigger)
     searchVector: tsvector("search_vector"),
 
+    // Version change note
+    changeNote: text("change_note"),
+
     // Stats
     viewCount: integer("view_count").default(0).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -176,6 +191,22 @@ export const objectPermissions = pgTable(
 );
 
 export const reviewRecords = pgTable(
+export const knowledgeFileVersions = pgTable(
+  "knowledge_file_versions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    objectId: uuid("object_id").notNull().references(() => knowledgeObjects.id, { onDelete: "cascade" }),
+    version: integer("version").notNull(),
+    filePath: text("file_path").notNull(),
+    fileSize: integer("file_size"),
+    fileHash: varchar("file_hash", { length: 128 }),
+    fileName: varchar("file_name", { length: 500 }),
+    fileType: varchar("file_type", { length: 100 }),
+    uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+  },
+  (t) => [index("idx_kfv_object").on(t.objectId)],
+);
+
   "review_records",
   {
     id: uuid("id").defaultRandom().primaryKey(),

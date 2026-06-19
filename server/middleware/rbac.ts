@@ -1,7 +1,8 @@
 import type { Response, NextFunction } from "express";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { eq } from "drizzle-orm";
-import { knowledgeObjects, objectPermissions } from "../db/schema";
+import { eq, and } from "drizzle-orm";
+
+import { knowledgeObjects, objectPermissions, spaceMembers } from "../db/schema";
 import { canRead, canEdit, canReview } from "../lib/permissions";
 import type { AuthRequest } from "./auth";
 
@@ -56,6 +57,14 @@ async function loadAndCheck(
   };
 
   let allowed = false;
+  // 空间管理员自动有读写权
+  if (req.user && (action === "read" || action === "edit")) {
+    const [isAdmin] = await db.select().from(spaceMembers)
+      .where(and(eq(spaceMembers.userId, req.user.id), eq(spaceMembers.spaceId, obj.spaceId), eq(spaceMembers.role, "admin")))
+      .limit(1);
+    if (isAdmin) { allowed = true; }
+  }
+
   if (action === "read") allowed = canRead(req.user, objInfo, extraGrants);
   else if (action === "edit") allowed = canEdit(req.user, objInfo, extraGrants);
   else if (action === "review") allowed = canReview(req.user, objInfo, extraGrants);
