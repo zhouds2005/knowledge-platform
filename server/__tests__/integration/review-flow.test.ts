@@ -14,14 +14,24 @@ const TEST_EMAIL = "integration-test@test.com";
 const TEST_PASS = "test123";
 
 let testUserId: string;
+let adminId: string;
 
 describe("Knowledge Object Lifecycle", () => {
   beforeAll(async () => {
+    // 清理并创建测试用户
     await db.delete(users).where(eq(users.email, TEST_EMAIL));
     const [user] = await db.insert(users).values({
       name: "Test User", email: TEST_EMAIL, passwordHash: await hashPassword(TEST_PASS), role: "editor",
     }).returning();
     testUserId = user.id;
+
+    // 获取种子数据中的管理员
+    const [admin] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, "admin@company.com"))
+      .limit(1);
+    adminId = admin.id;
   });
 
   it("should go from draft → published via review", async () => {
@@ -39,7 +49,8 @@ describe("Knowledge Object Lifecycle", () => {
     const { object } = await submitForReview(obj.id);
     expect(object.status).toBe("pending_review");
 
-    const published = await approveReview(object.id, testUserId);
+    // 用管理员审核（作者不能审核自己的文档）
+    const published = await approveReview(object.id, adminId);
     expect(published.status).toBe("published");
   });
 
@@ -52,7 +63,9 @@ describe("Knowledge Object Lifecycle", () => {
     }).returning();
 
     await submitForReview(obj.id);
-    const rejected = await rejectReview(obj.id, testUserId, "needs work");
+
+    // 用管理员驳回（作者不能审核自己的文档）
+    const rejected = await rejectReview(obj.id, adminId, "needs work");
     expect(rejected.status).toBe("draft");
 
     const { object } = await submitForReview(obj.id);
