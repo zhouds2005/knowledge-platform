@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/node-postgres";
-import { eq, and, or } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { knowledgeObjects, knowledgeSpaces, reviewRecords, users } from "../db/schema";
 
 const db = drizzle(process.env.DATABASE_URL!);
