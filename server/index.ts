@@ -1,4 +1,5 @@
 import "dotenv/config";
+import notificationRouter from './routers/notifications';
 import previewRouter from './routers/preview';
 import express from "express";
 import cookieParser from "cookie-parser";
@@ -21,6 +22,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(loadAuth);
 
+app.use('/api', notificationRouter);
 app.use('/api', previewRouter);
 app.use("/api", authRouter);
 app.use("/api", departmentsRouter);
