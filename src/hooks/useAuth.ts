@@ -63,6 +63,7 @@ export function useAuth() {
     user: (userResp?.user as User) ?? null,
     isLoading,
     isAuthenticated: !!userResp?.user && !isError,
+    notificationCount: 0,
     login: loginMutation.mutate,
     loginError: loginMutation.error?.message ?? null,
     isLoggingIn: loginMutation.isPending,
