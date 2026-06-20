@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 // ── Mock drizzle-orm/node-postgres ──
 const mockDb = vi.hoisted(() => {
@@ -50,7 +50,7 @@ import { loadAuth, requireAuth, type AuthRequest } from "../middleware/auth";
 
 describe("auth middleware: requireAuth", () => {
   it("user 存在时调用 next()", () => {
-    const req = { user: { id: "u1", name: "Test", email: "t@x.com", role: "viewer", departmentId: null } } as AuthRequest;
+    const req = { user: { id: "u1", name: "Test", email: "t@x.com", role: "viewer", departmentId: null } } as unknown as AuthRequest;
     const res = {
       status: vi.fn().mockReturnThis(),
       json: vi.fn(),
@@ -64,7 +64,7 @@ describe("auth middleware: requireAuth", () => {
   });
 
   it("user 不存在时返回 401", () => {
-    const req = { user: undefined } as AuthRequest;
+    const req = { user: undefined } as unknown as AuthRequest;
     const res = {
       status: vi.fn().mockReturnThis(),
       json: vi.fn(),
@@ -85,7 +85,7 @@ describe("auth middleware: requireAuth", () => {
 
 describe("auth middleware: loadAuth", () => {
   it("无 session cookie 时直接 next()，user 为 undefined", async () => {
-    const req = { cookies: {} } as AuthRequest;
+    const req = { cookies: {} } as unknown as AuthRequest;
     const _res = {} as any;
     const next = vi.fn();
 
@@ -96,7 +96,7 @@ describe("auth middleware: loadAuth", () => {
   });
 
   it("无 cookies 对象时直接 next()", async () => {
-    const req = {} as AuthRequest;
+    const req = {} as unknown as AuthRequest;
     const _res = {} as any;
     const next = vi.fn();
 
@@ -110,7 +110,7 @@ describe("auth middleware: loadAuth", () => {
     // 默认 mockDb.select 返回空数组
     const req = {
       cookies: { kp_sid: "invalid-session-id" },
-    } as AuthRequest;
+    } as unknown as AuthRequest;
     const _res = {} as any;
     const next = vi.fn();
 
@@ -140,7 +140,7 @@ describe("auth middleware: loadAuth", () => {
 
     const req = {
       cookies: { kp_sid: "valid-session-id" },
-    } as AuthRequest;
+    } as unknown as AuthRequest;
     const _res = {} as any;
     const next = vi.fn();
 
@@ -167,7 +167,7 @@ describe("auth middleware: loadAuth", () => {
 
     const req = {
       cookies: { kp_sid: "some-session" },
-    } as AuthRequest;
+    } as unknown as AuthRequest;
     const _res = {} as any;
     const next = vi.fn();
 

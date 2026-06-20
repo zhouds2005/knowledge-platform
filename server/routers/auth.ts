@@ -49,7 +49,7 @@ router.post("/auth/login", async (req, res) => {
 
     res.cookie(SESSION_COOKIE, session.id, {
       httpOnly: true,
-      secure: false, // set true in production
+      secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: SESSION_MAX_AGE_MS,
       path: "/",
@@ -111,7 +111,7 @@ router.get("/auth/callback", async (req, res) => {
     const [session] = await db.insert(sessions).values({ userId: user.id, expiresAt }).returning();
 
     res.cookie(SESSION_COOKIE, session.id, {
-      httpOnly: true, secure: false, sameSite: "lax", maxAge: SESSION_MAX_AGE_MS, path: "/",
+      httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: SESSION_MAX_AGE_MS, path: "/",
     });
 
     return res.redirect("/");

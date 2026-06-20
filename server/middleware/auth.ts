@@ -5,15 +5,18 @@ import { sessions, users } from "../db/schema";
 
 const db = drizzle(process.env.DATABASE_URL!);
 
+/** 认证用户类型，供权限检查等模块复用 */
+export type User = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  departmentId: string | null;
+};
+
 /** Extend Express Request to include authenticated user */
 export interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-    departmentId: string | null;
-  };
+  user?: User;
 }
 
 const SESSION_COOKIE = "kp_sid";

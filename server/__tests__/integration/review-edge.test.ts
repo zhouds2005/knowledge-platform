@@ -7,7 +7,7 @@ import "dotenv/config";
 import { describe, it, expect, beforeAll } from "vitest";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
-import { users, knowledgeSpaces, knowledgeObjects } from "../../db/schema";
+import { users, knowledgeObjects } from "../../db/schema";
 import { submitForReview, approveReview, rejectReview } from "../../lib/review";
 
 const db = drizzle(process.env.DATABASE_URL!);
@@ -89,7 +89,7 @@ describe("Review State Machine — Edge Cases", () => {
       .limit(1);
     if (!obj) return;
 
-    const result = await approveReview(obj.id, adminId, true);
+    const result = await approveReview(obj.id, adminId);
     expect(result.status).toBe("published");
 
     // 恢复

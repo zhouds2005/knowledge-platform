@@ -19,7 +19,7 @@ const statusConfig: Record<string, { label: string; cls: string }> = {
 
 export default function DocumentDetail() {
   const { id } = useParams<{ id: string }>();
-  const [previewFile, setPreviewFile] = useState<{ path: string; name: string; downloadUrl: string } | null>(null);
+  const [previewFile, setPreviewFile] = useState<{ filePath: string; fileName: string; downloadUrl: string } | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["knowledge", id],
@@ -81,7 +81,7 @@ export default function DocumentDetail() {
         {obj.filePath ? (
           <div className="flex items-center bg-page-bg border border-border rounded-lg px-4 py-2.5">
             <span className="text-sm font-medium flex-1 truncate">{obj.fileName ?? obj.filePath.split("/").pop()}</span>
-            <button className="btn btn-sm text-xs" onClick={() => setPreviewFile({ path: obj.filePath, name: obj.fileName ?? "文件", downloadUrl: `/api/drive/download?path=${encodeURIComponent(obj.filePath)}` })}>预览</button>
+            <button className="btn btn-sm text-xs" onClick={() => setPreviewFile({ filePath: obj.filePath, fileName: obj.fileName ?? "文件", downloadUrl: `/api/drive/download?path=${encodeURIComponent(obj.filePath)}` })}>预览</button>
             <a href={`/api/drive/download?path=${encodeURIComponent(obj.filePath)}`} className="btn btn-sm text-xs ml-1">下载</a>
           </div>
         ) : (

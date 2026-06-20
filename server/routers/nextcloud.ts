@@ -46,13 +46,17 @@ router.post("/drive/upload", requireAuth, upload.single("file"), async (req, res
       .from(knowledgeSpaces)
       .limit(1);
 
+    if (!space) {
+      return res.status(400).json({ error: "请先创建知识空间后再上传文件" });
+    }
+
     const [obj] = await db
       .insert(knowledgeObjects)
       .values({
         type: "drive_file",
         title: fileName,
-        departmentId: space?.departmentId ?? "00000000-0000-0000-0000-000000000000",
-        spaceId: space?.id ?? "00000000-0000-0000-0000-000000000000",
+        departmentId: space.departmentId,
+        spaceId: space.id,
         ownerId: (req as import("../middleware/auth").AuthRequest).user!.id,
         sourceTable: "nextcloud_files",
         sourceId: "00000000-0000-0000-0000-000000000000",

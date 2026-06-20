@@ -6,10 +6,16 @@ import fs from "fs";
 const execAsync = promisify(exec);
 const CACHE_DIR = "/tmp/knowledge-previews";
 
-fs.mkdirSync(CACHE_DIR, { recursive: true });
+/** 懒初始化缓存目录，避免 import 时执行同步 I/O */
+function ensureCacheDir() {
+  if (!fs.existsSync(CACHE_DIR)) {
+    fs.mkdirSync(CACHE_DIR, { recursive: true });
+  }
+}
 
 // Office 文档转 PDF（调用 LibreOffice headless）
 export async function convertOfficeToPdf(filePath: string): Promise<string> {
+  ensureCacheDir();
   const cacheKey = Buffer.from(filePath).toString("base64").slice(0, 32);
   const outputDir = path.join(CACHE_DIR, cacheKey);
   const baseName = path.basename(filePath, path.extname(filePath));

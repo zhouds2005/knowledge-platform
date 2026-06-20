@@ -184,7 +184,7 @@ describe("nextcloud: uploadFile", () => {
   it("用 PUT 方法上传文件", async () => {
     mockFetch.mockResolvedValue({ ok: true });
 
-    const content = new Uint8Array([1, 2, 3]);
+    const content = Buffer.from([1, 2, 3]);
     const result = await uploadFile("/dir/", "test.txt", content);
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
@@ -196,7 +196,7 @@ describe("nextcloud: uploadFile", () => {
   it("上传失败时返回 false", async () => {
     mockFetch.mockResolvedValue({ ok: false, status: 500 });
 
-    const content = new Uint8Array([1, 2, 3]);
+    const content = Buffer.from([1, 2, 3]);
     const result = await uploadFile("/dir/", "test.txt", content);
 
     expect(result).toBe(false);

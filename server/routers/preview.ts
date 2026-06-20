@@ -1,10 +1,23 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
-import { convertOfficeToPdf, isOfficeFile } from "../lib/preview";
+import { convertOfficeToPdf } from "../lib/preview";
 import path from "path";
 import fs from "fs";
+import os from "os";
 
 const router = Router();
+
+// 允许访问的文件目录白名单
+const ALLOWED_DIRS = [
+  path.resolve("/tmp/knowledge-previews"),
+  path.resolve(os.tmpdir(), "kp-uploads"),
+] as const;
+
+/** 校验路径安全：必须落在白名单目录内，防止路径遍历攻击 */
+function isPathAllowed(filePath: string): boolean {
+  const resolved = path.resolve(filePath);
+  return ALLOWED_DIRS.some(dir => resolved === dir || resolved.startsWith(dir + path.sep));
+}
 
 // GET /api/preview/raw?path=... — 直接返回文件（PDF/图片/文本）
 router.get("/preview/raw", requireAuth, async (req, res) => {
@@ -12,6 +25,10 @@ router.get("/preview/raw", requireAuth, async (req, res) => {
   if (!filePath) return res.status(400).json({ error: "Missing path" });
 
   // 安全检查：确保路径在预期范围内
+  if (!isPathAllowed(filePath)) {
+    return res.status(403).json({ error: "Access denied" });
+  }
+
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ error: "File not found" });
   }
@@ -35,6 +52,10 @@ router.get("/preview/raw", requireAuth, async (req, res) => {
 router.get("/preview/office", requireAuth, async (req, res) => {
   const filePath = req.query.path as string;
   if (!filePath) return res.status(400).json({ error: "Missing path" });
+
+  if (!isPathAllowed(filePath)) {
+    return res.status(403).json({ error: "Access denied" });
+  }
 
   try {
     const pdfPath = await convertOfficeToPdf(filePath);

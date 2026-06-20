@@ -1,4 +1,4 @@
-interface User { id: string; name: string; email: string; role: string; departmentId: string | null; }
+import type { User } from "../middleware/auth";
 
 interface KnowledgeObject {
   id: string;
